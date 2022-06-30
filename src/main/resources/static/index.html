@@ -10,9 +10,55 @@
     <link rel="stylesheet" type="text/css" href="/webjars/bootstrap/css/bootstrap.min.css"/>
     <script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
     <script type="text/javascript" src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+    <script type="text/javascript">
+        $.get("/user", function(data) {     // this JS script expects the server-side endpoint to be called /user
+            console.log(data);
+            $("#user").html(data.name);
+            $(".unauthenticated").hide();
+            $(".authenticated").show();
+        });
+
+        $.get("/error", function(data) {
+            if (data) {
+                $(".error").html(data);
+            } else {
+                $(".error").html('');
+            }
+        });
+
+        var logout = function() {
+            $.post("/logout", function() {
+                $("#user").html('');
+                $(".unauthenticated").show();
+                $("authenticated").hide();
+            })
+            return true;
+        }
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if(settings.type == "POST" || settings.type == "PUT" || settings.type == "DELETE") {
+                    if(!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                        //only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-XSRF-TOKEN", Cookies.get("XSRF-TOKEN"));
+                    }
+                }
+            }
+        });
+    </script>
 </head>
 <body>
-	<h1>Demo</h1>
-	<div class="container"></div>
+	<h1>Demo - OAuth2 Authentication login</h1>
+	<div class="container unauthenticated">
+        With GitHub: <a href="/oauth2/authorization/github">click here</a>
+    </div>
+    <div class="authenticated" style="display:none">
+        Logged in as: <span id="user"></span>
+        <div>
+            <button onClick="logout()" class="btn btn-primary">Logout</button>
+        </div>
+    </div>
+    <div class="container text-danger error"></div>
 </body>
 </html>
